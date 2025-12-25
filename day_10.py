@@ -124,7 +124,6 @@ def reach_target_joltages(machine, verbose = True):
     current_min = inf
     # Store already calculated combinations for quick lookup
     combns_dict = {}
-    duplicates_removed = 0
     while len(all_machines) > 0:
         if verbose:
             print(str(len(all_machines)) + ' possibilities in memory')
@@ -148,9 +147,6 @@ def reach_target_joltages(machine, verbose = True):
             combns_dict[(buttons_to_use, times_to_press)] = press_combinations
         else:
             press_combinations = combns_dict[(buttons_to_use, times_to_press)]
-        # Get a list of button presses in current machines to screen out duplicates
-        total_presses = times_to_press + current_machine.sum_presses
-        existing_presses = [mchn.buttons_pressed for mchn in all_machines if mchn.sum_presses == total_presses]    
         # Add machine for each combination
         min_changed = False
         for counter, combn in enumerate(press_combinations):
@@ -165,21 +161,17 @@ def reach_target_joltages(machine, verbose = True):
                     min_changed = True
                     if verbose:
                         print('Found at ' + str(new_machine.sum_presses))
-            # Only add it to the test set if it isn't a duplicate, it hasn't
+            # Only add it to the test set if it hasn't
             # succeeded or failed, and it wouldn't match or exceed the current min
             # when next worked on
             if ((not new_machine.failed) &
                 (not new_machine.succeeded)  & 
                 (new_machine.next_sum_presses < current_min)):
-                if (new_machine.buttons_pressed not in existing_presses):
-                    all_machines.append(new_machine)
-                    existing_presses.append(new_machine.buttons_pressed)
-                else:
-                    duplicates_removed +=1
+                all_machines.append(new_machine)
         # Remove any existing machines that will go higher than a min that was found
         if min_changed:
             all_machines = [mchn for mchn in all_machines if mchn.next_sum_presses < current_min]
-    return (current_min, duplicates_removed)
+    return (current_min)
     
 
 # Test
@@ -193,7 +185,7 @@ pt1_answer = sum([find_min_presses(mchn) for mchn in input])
 # Part 2
 sum([reach_target_joltages(mchn) for mchn in test]) == 33
 pt2_answers = []
-for i in range(0, len(input)):
+for i in range(65, 80):
     print('Processing machine ' + str(i))
     start = time.time()
     answer = reach_target_joltages(input[i], verbose = False)
